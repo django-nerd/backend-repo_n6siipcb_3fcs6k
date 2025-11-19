@@ -1,48 +1,66 @@
 """
-Database Schemas
+Database Schemas for Nizard Gaming
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a collection in MongoDB. The collection name
+is the lowercase of the class name (e.g., Team -> "team").
 """
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
+from datetime import datetime
 
-from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
-
+# Core user (kept for potential future use)
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
     name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
+    email: EmailStr = Field(..., description="Email address")
+    address: Optional[str] = Field(None, description="Address")
     age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
     is_active: bool = Field(True, description="Whether user is active")
 
+# Merchandise product
 class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
     title: str = Field(..., description="Product title")
     description: Optional[str] = Field(None, description="Product description")
     price: float = Field(..., ge=0, description="Price in dollars")
     category: str = Field(..., description="Product category")
+    image_url: Optional[str] = Field(None, description="Main product image")
     in_stock: bool = Field(True, description="Whether product is in stock")
 
-# Add your own schemas here:
-# --------------------------------------------------
+# Esports team information
+class Team(BaseModel):
+    name: str = Field(..., description="Team name")
+    game: str = Field(..., description="Game title (e.g., BGMI, Valorant)")
+    description: Optional[str] = Field(None, description="Short bio / highlights")
+    tier: Optional[str] = Field(None, description="Tier or division")
+    availability: str = Field("available", description="available | booked | tryouts")
+    contact_email: Optional[EmailStr] = Field(None, description="Point of contact")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+# Hire/apply/contact application
+class Application(BaseModel):
+    name: str = Field(..., description="Applicant or company name")
+    email: EmailStr
+    phone: Optional[str] = None
+    type: str = Field(..., description="hire-team | content | join-team")
+    game: Optional[str] = Field(None, description="Target game if relevant")
+    message: Optional[str] = None
+    budget: Optional[str] = Field(None, description="Budget range if hiring")
+    role: Optional[str] = Field(None, description="Preferred role if joining team")
+    created_at: Optional[datetime] = None
+
+# Order item for merchandise
+class OrderItem(BaseModel):
+    product_id: str = Field(..., description="Referenced product _id as string")
+    title: str
+    price: float
+    quantity: int = Field(..., ge=1)
+    image_url: Optional[str] = None
+
+# Merchandise order
+class Order(BaseModel):
+    customer_name: str
+    email: EmailStr
+    address: str
+    items: List[OrderItem]
+    total_amount: float = Field(..., ge=0)
+    status: str = Field("pending", description="pending | paid | shipped | delivered | cancelled")
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
